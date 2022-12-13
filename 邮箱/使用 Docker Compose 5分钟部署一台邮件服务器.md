@@ -43,7 +43,7 @@
  假设我要在1.1.1.2这台机器上配置 best.pm、best.nl 这两个域名用于发邮件。1.1.1.2 的主机名是 mail1.wangchenyu.net.cn。那么我们需要
 
  - **设置 rDNS，将 1.1.1.2 映射到 mail1.wangchenyu.net.cn**。DNS是域名 -> IP的解析。rDNS 即I P-> 域名的解析。有了这个rDNS记录，收到邮件的服务器就能确认 mail1.wangchenyu.net.cn 可以被用在1.1.1.2这个IP上。一般在主机商后台可以添加 rdns 记录，找不到的话提交一个工单即可。
- - **设置 best.pm 和 best.nl 的MX记录，记录名为 @，值为 mail1.wangchenyu.net.cn，优先级为10。\**MX记录用于别人向best.pm这个域发送邮件时查找\**收信服务器**。不设置的话无法收到别人发的邮件，并且自己发出的邮件的“可信度”也会大大降低。优先级
+ - **设置 best.pm 和 best.nl 的MX记录，记录名为 @，值为 mail1.wangchenyu.net.cn，优先级为10。MX记录用于别人向best.pm这个域发送邮件时查找收信服务器**。不设置的话无法收到别人发的邮件，并且自己发出的邮件的“可信度”也会大大降低。优先级
  - **设置DKIM签名。DKIM先由发件服务器生成**，之后每封邮件都会带上这个签名。接着，**还要在 best.pm 和 best.nl 上各添加一条TXT记录**，记录名和值**在发件服务器生成DKIM时都会提供**。收到邮件后会对比邮件中的DKIM签名和DNS中的TXT记录是否一致
  - **设置SPF记录** 这个记录规定了可以用这个域发邮件的主机。**在 best.pm 和 best.nl 上各添加一条TXT记录，**记录名为`@`，值为`v=spf1 mx ~all`即可允许所有IP使用此域。
  - **设置DMARC记录** 这个记录指出他们的地址被 SPF 和/或 DKIM/或别的方法保护。**在 best.pm 和 best.nl 上各添加一条TXT记录，**记录名为`_dmarc`，值为`v=DMARC1; p=none`
@@ -109,7 +109,7 @@
 
    > 表中 `treesir.pub` 注意替换为你自己的 主域名。
 
- - VPS 服务器设置 反向解析 `PTR` (rdns) 记录
+ - VPS 服务器设置 反向解析 `PTR` (rdns) 记录 （**注意：一般的服务器，这里是不需要配置的！**）
 
    [![image-20210803123544465](./assets/image-20210803123544465-20221213175134317.png)](https://cdn.treesir.pub/img/image-20210803123544465.png)
 
@@ -171,28 +171,39 @@
  services:
    mailserver:
      image: docker.io/mailserver/docker-mailserver:latest
+     container_name: mailserver
+     # If the FQDN for your mail-server is only two labels (eg: example.com),
+     # you can assign this entirely to `hostname` and remove `domainname`.
      hostname: mail
      domainname: treesir.pub
-     container_name: mailserver
      env_file: mailserver.env
-     dns: 223.5.5.5
+     # More information about the mail-server ports:
+     # https://docker-mailserver.github.io/docker-mailserver/edge/config/security/understanding-the-ports/
+     # To avoid conflicts with yaml base-60 float, DO NOT remove the quotation marks.
      ports:
-       - "25:25"
-       - "143:143"
-       - "587:587"
-       - "993:993"
-       - "110:110"
-       - "995:995"
+       - "25:25"    # SMTP  (explicit TLS => STARTTLS)
+       - "110:110"  # POP   (explicit TLS => STARTTLS)
+       - "143:143"  # IMAP4 (explicit TLS => STARTTLS)
+       - "465:465"  # ESMTP (implicit TLS)
+       - "587:587"  # ESMTP (explicit TLS => STARTTLS)
+       - "993:993"  # IMAP4 (implicit TLS)
+       - "995:995"  # 
      volumes:
-       - ./data/maildata:/var/mail
-       - ./data/mailstate:/var/mail-state
-       - ./data/maillogs:/var/log/mail
+       - ./docker-data/dms/mail-data/:/var/mail/
+       - ./docker-data/dms/mail-state/:/var/mail-state/
+       - ./docker-data/dms/mail-logs/:/var/log/mail/
+       - ./docker-data/dms/config/:/tmp/docker-mailserver/
        - /etc/localtime:/etc/localtime:ro
-       - ./config/:/tmp/docker-mailserver
-       - /etc/letsencrypt/archive/mail.treesir.pub:/tmp/ssl:ro
+       - /etc/letsencrypt/archive/mail.dakun.work:/tmp/ssl:ro 
      restart: always
      stop_grace_period: 1m
-     cap_add: [ "NET_ADMIN", "SYS_PTRACE" ]
+     cap_add:
+       - NET_ADMIN
+       - SYS_PTRACE
+     healthcheck:
+       test: "ss --listening --tcp | grep -P 'LISTEN.+:smtp' || exit 1"
+       timeout: 3s
+       retries: 0
  ```
 
  
