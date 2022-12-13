@@ -1,8 +1,8 @@
- # 使用 Docker Compose 5分钟 部署 一台邮件服务器
+ # 使用 Docker Compose 5分钟部署一台邮件服务器
 
  # 背景
 
-> 由于 `Gmail` 邮箱在国内无法使用 且 `国内手机` 号码无法继续注册账号原因，最近想着折腾一下 自建一台 `邮件服务器` 玩玩。正好在国外有台 vps (搬瓦工的)，比较空闲，目前且用来做扶墙使用，有点浪费，决定使用此台服务器搭建 `邮件服务器` 。选择的部署方案选择了较为轻便的 `docker`，在了解网上主流的实现镜像后 `analogic/poste.io` & `mailserver/docker-mailserver`，由于目前 vps 资源为 `2c 1g` 的低配置，试着跑了一下前者，资源占用非常大(可能 默认开了什么功能什么的)，当前配置下完全跑不动。了解后者这个 [项目](https://github.com/docker-mailserver/docker-mailserver/) 后，可以在最低 `1c 512m` 下运行，决定选用后者 `docker-mailserver` 作为部署。
+> 选择的部署方案选择了较为轻便的 `docker`，在了解网上主流的实现镜像后 `analogic/poste.io` & `mailserver/docker-mailserver`，由于目前 vps 资源为 `2c 1g` 的低配置，试着跑了一下前者，资源占用非常大(可能 默认开了什么功能什么的)，当前配置下完全跑不动。了解后者这个 [项目](https://github.com/docker-mailserver/docker-mailserver/) 后，可以在最低 `1c 512m` 下运行，决定选用后者 `docker-mailserver` 作为部署。
 
  ## 环境说明
 
